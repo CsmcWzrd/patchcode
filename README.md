@@ -1,8 +1,8 @@
 # patchcode
 
 # Information 
-Desgined by Anoop Kumar Narayanan
-Coded by ChatGPT 5.5 (Originally coded by Anoop Kumar Narayanan, only patch tool was present and the repo name was twopatch)
+Desgined by Anoop Kumar Narayanan    
+Coded by ChatGPT 5.5 (Originally coded by Anoop Kumar Narayanan, only patch tool was present and the repo name was twopatch)    
 
 Patchcode is a simple editable text-file patching mechanism.
 
