@@ -1,12 +1,14 @@
 # patchcode
 
-# Information 
-Designed by Anoop Kumar Narayanan    
-Coded by ChatGPT 5.5 (Originally coded by Anoop Kumar Narayanan, only patch tool was present and the repo name was twopatch)    
+# Information:
+
+Designed by Anoop Kumar Narayanan
+
+Coded by ChatGPT 5.5 (Originally coded by Anoop Kumar Narayanan, only patch tool was present and the repo name was twopatch)
 
 Patchcode is a simple editable text-file patching mechanism.
 
-The package now builds two command-line tools:
+The package builds two command-line tools:
 
 - `patchcode` applies patchcode patch files.
 - `diffcode` generates patchcode patch files by comparing an original text file with an updated text file, or by comparing two directories.
@@ -25,7 +27,56 @@ Each section is separated by a line containing exactly:
 
 The old single `@` separator is no longer used, so ordinary `@` characters can appear in patch code without being treated as section delimiters.
 
-## Build
+## Build options
+
+The repository now includes four build-system options:
+
+1. Plain Makefile
+2. Autoconf-generated configuration with the same Makefile
+3. CMake project files
+4. Visual Studio 2022 C++ solution and project files
+
+### Build with plain Make
+
+```sh
+make
+```
+
+This creates:
+
+```text
+build/make/patchcode
+build/make/diffcode
+```
+
+Useful Make targets:
+
+```sh
+make test
+make install PREFIX=/usr/local
+make clean
+```
+
+### Build with Autoconf
+
+The package includes `configure.ac`, `config.mk.in`, and a generated `configure` script.
+
+```sh
+./configure --prefix=/usr/local
+make
+make test
+make install
+```
+
+The Autoconf flow writes `config.mk`, which is included by the plain Makefile.
+
+If `configure` needs to be regenerated:
+
+```sh
+autoconf
+```
+
+### Build with CMake
 
 ```sh
 cmake -S . -B build
@@ -34,12 +85,57 @@ cmake --build build
 
 This creates both executables under the build tree, normally:
 
-```sh
+```text
 build/src/patchcode
 build/src/diffcode
 ```
 
-On Windows generators the binaries may be under a configuration directory such as `build/src/Debug` or `build/src/Release`.
+On Windows generators, binaries may be under a configuration directory such as:
+
+```text
+build/src/Debug
+build/src/Release
+```
+
+Run tests with CMake:
+
+```sh
+ctest --test-dir build --output-on-failure
+```
+
+Install with CMake:
+
+```sh
+cmake --install build --prefix /usr/local
+```
+
+### Build with Visual Studio 2022
+
+Open:
+
+```text
+vs2022/patchcode.sln
+```
+
+The solution contains two console application projects:
+
+- `patchcode`
+- `diffcode`
+
+Use `Build > Build Solution` in Visual Studio 2022. The output binaries are written to:
+
+```text
+vs2022/bin/<Platform>/<Configuration>/
+```
+
+For example:
+
+```text
+vs2022/bin/x64/Release/patchcode.exe
+vs2022/bin/x64/Release/diffcode.exe
+```
+
+The project files use the Visual Studio 2022 `v143` platform toolset.
 
 ## Apply a patch
 
@@ -97,11 +193,10 @@ end pattern lines
 <@+@+@>
 ```
 
-
 Directory-mode behavior:
 
 - Files present in both directories are compared line-by-line and emitted as normal patchcode replacement hunks.
-- Files present only in the updated directory are emitted as full-file creation segments. `patchcode` now creates missing parent directories before writing the target file.
+- Files present only in the updated directory are emitted as full-file creation segments. `patchcode` creates missing parent directories before writing the target file.
 - Files present only in the original directory are emitted as empty full-file replacement segments for review. This keeps the generated patch inside the current patchcode patch design; patchcode does not physically delete files.
 - Files containing NUL bytes, and files containing a line exactly equal to `<@+@+@>`, are skipped with a warning because they cannot be represented safely in the current text patch format.
 

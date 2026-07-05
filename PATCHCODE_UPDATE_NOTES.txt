@@ -69,3 +69,17 @@ Verified build and test commands
     cmake -S . -B build
     cmake --build build -j2
     tests/run_diffcode_tests.sh
+
+2026-07-05 build-system update
+------------------------------
+- Added README Information section requested by project owner.
+- Added a plain POSIX-style Makefile that builds patchcode and diffcode.
+- Added Autoconf files: configure.ac, config.mk.in, and generated configure script.
+- Updated CMake project files with install targets and a smoke-test entry.
+- Added Visual Studio 2022 solution and C++ project files under vs2022/.
+
+VS2022 compile fix
+------------------
+- Added NOMINMAX and WIN32_LEAN_AND_MEAN protection before including Windows.h in diffcode_main.cpp.
+- Undefines legacy Windows min/max macros after Windows.h so std::min and std::max compile correctly in Visual Studio 2022.
+- Added the same Windows macro protections to the VS2022 project files.
