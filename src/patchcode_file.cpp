@@ -149,7 +149,7 @@ int patchcode_file::apply_patch( patchcode_segments *segment ){
 			cerr<<"Warning: ignoring patch ( use ----++++endoffile++++---- to truncate) : "<<segment->filename<<" "<<segment->author<<" "<<segment->patchname<<" "<<segment->bugs<<endl;
 			return 5;
 		}
-	} else if( start->size() == 0 && end->size() >=  3 ){
+	} else if( start->size() == 0 && end->size() > 0 ){
 		// prepend the code after removing any content before the end marker
 		int startline = 0;
 		int endline = find_pattern( end );
@@ -158,7 +158,7 @@ int patchcode_file::apply_patch( patchcode_segments *segment ){
 		endline -= static_cast<int>(end->size());
 		delete_code ( startline, endline );
 		prepend_code( change );
-	} else if( start->size() >= 3 && end->size() == 0 ){
+	} else if( start->size() > 0 && end->size() == 0 ){
 		// append the code after replacing everything after the start marker
 		int startline = find_pattern( start );
 		if( startline < 0 )

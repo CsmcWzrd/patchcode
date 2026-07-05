@@ -40,3 +40,29 @@ Verification performed:
     cmake -S . -B build
     cmake --build build -j2
 
+Diffcode generator update
+=========================
+
+Additional changes made in this package:
+
+1. Added a second command-line executable: diffcode.
+   - Usage: diffcode [options] <original-file> <updated-file> [output.patch]
+   - It compares two text files and emits a patchcode patch file.
+   - Generated patches use the current '<@+@+@>' separator.
+
+2. Generated patch metadata.
+   - diffcode writes filename, author, patchname, timestamp, enable, bugs, and extra headers.
+   - Defaults are intentionally fillable placeholders for author, patchname, and bugs.
+   - Options are available to set these fields during generation.
+
+3. Generated pattern matching.
+   - diffcode creates start and end code-location pattern sections around each changed hunk.
+   - The default minimum anchor size is 3 lines.
+   - Anchors expand up to 8 lines by default to reduce duplicate pattern matches.
+   - Small or whole-file changes fall back to the patchcode full-file replacement marker.
+
+4. Verification performed for this update:
+
+    cmake -S . -B build
+    cmake --build build -j2
+    diffcode-generated patch applied with patchcode and compared successfully against updated files.
