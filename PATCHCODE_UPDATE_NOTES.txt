@@ -1,0 +1,42 @@
+Patchcode update notes
+======================
+
+Changes made in this package:
+
+1. Renamed the project to patchcode.
+   - Executable target: patchcode
+   - CMake project: patchcode
+   - Source/header files: patchcode_*.cpp / patchcode_*.h
+   - User-facing help text and README now use Patchcode/patchcode.
+
+2. Replaced the old patch section separator with '<@+@+@>'.
+   - Patch files now use a line containing exactly <@+@+@> between:
+     * start code location
+     * updated code
+     * end code location
+   - Ordinary at-sign characters in patch payload lines are no longer interpreted as separators.
+
+3. Parser fixes.
+   - Replaced fragile character-by-character parsing with line-preserving parsing.
+   - Preserves CR/LF in patch payload lines.
+   - Handles EOF and incomplete segments more safely.
+   - Ignores metadata comments and blank lines cleanly.
+
+4. Patch application fixes.
+   - Fixed out-of-range iterator and dereference bugs in code-location matching.
+   - Fixed insertion at end-of-file.
+   - Fixed deletion range clamping.
+   - Initialized code-line state consistently.
+   - Avoids rewriting files when a patch segment fails to apply.
+   - Handles missing source files more safely.
+   - Uses binary mode for source reads/writes/backups to preserve line endings.
+
+5. Build fixes.
+   - CMake now sets C++11 explicitly.
+   - Build verified with cmake and GNU C++ in this environment.
+
+Verification performed:
+
+    cmake -S . -B build
+    cmake --build build -j2
+
