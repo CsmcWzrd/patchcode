@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <exception>
+#include <cstdio>
 #include <patchcode_tool.h>
 #include <patchcode_file.h>
 
@@ -14,6 +15,7 @@ void show_help(){
 	cout<<"patchcode --help : show help"<<endl;
 	cout<<"patchcode -h : show help"<<endl;
 	cout<<"patchcode [--backup] <filename> : run the patch program "<<endl;
+	cout<<"patchcode --undo-patch <filename> : undo using <filename>.undo.patch"<<endl;
 	cout<<"diffcode <original-file> <updated-file> [output.patch] : generate a patchcode patch file"<<endl;
 	cout<<"diffcode <original-dir> <updated-dir> [output.patch] : generate a directory patchcode patch file"<<endl;
 	cout<<"----"<<endl;
@@ -55,11 +57,13 @@ void show_help(){
 	cout<<endl;
 	cout<<"              Backup files are not created by default. Use --backup to create one backup per     "<<endl;
 	cout<<"              target file for the current patchcode run.                                            "<<endl;
-	cout<<"              Applied empty file(*_applied) is created for each run for a specific patch file to   "<<endl;
-	cout<<"              detect multiple patchcode execution for the same patch file.                         "<<endl;
+	cout<<"              A reverse patch is created as <patchfile>.undo.patch when a patch changes files.     "<<endl;
+	cout<<"              Use --undo-patch <patchfile> to apply that generated reverse patch.                  "<<endl;
+	cout<<"              Patchcode reports whether each patch segment was applied, already applied, disabled, "<<endl;
+	cout<<"              or failed. Applied empty files(*_applied) are created only when changes are applied. "<<endl;
 	cout<<endl;
-	cout<<"NOTE: Patch only once, otherwise it may lead to unexpected results as delete doesn't say what lines"<<endl;
-	cout<<"      are being deleted. Also patchcode doesn't perform a check if the patch has already applied.  "<<endl;
+	cout<<"NOTE: Patchcode detects common already-applied cases by comparing the target replacement area with"<<endl;
+	cout<<"      the patch change section before rewriting the file.                                         "<<endl;
 	cout<<"----"<<endl;
 	cout<<endl;
 	cout<<endl;
@@ -95,6 +99,22 @@ void show_help(){
 	cout<<endl;
 }
 
+
+static bool file_exists_for_patchcode(const string &path) {
+	fstream f(path.c_str(), ios::in | ios::binary);
+	return f.is_open();
+}
+
+static string undo_patch_filename_for(const string &patch_filename) {
+	return patch_filename + ".undo.patch";
+}
+
+static bool string_ends_with_patchcode(const string &s, const string &suffix) {
+	if( suffix.size() > s.size() )
+		return false;
+	return s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 int main( int argc , char *argv[ ] ){
 
 	if( argc < 2 ){
@@ -104,6 +124,7 @@ int main( int argc , char *argv[ ] ){
 	}
 
 	bool backup_enabled = false;
+	bool undo_mode = false;
 	string patch_filename;
 
 	for( int i = 1; i < argc; ++i ){
@@ -113,6 +134,8 @@ int main( int argc , char *argv[ ] ){
 			return 0;
 		} else if( arg == "--backup" ){
 			backup_enabled = true;
+		} else if( arg == "--undo-patch" ){
+			undo_mode = true;
 		} else if( arg.size() > 0 && arg[0] == '-' ){
 			cerr<<"Error: Unknown option: "<<arg<<endl;
 			show_help();
@@ -132,11 +155,28 @@ int main( int argc , char *argv[ ] ){
 		return 1;
 	}
 
+	string file_to_open = patch_filename;
+	string undo_sidecar = undo_patch_filename_for(patch_filename);
+	bool create_undo_patch = !undo_mode;
+
+	if( undo_mode ){
+		file_to_open = undo_sidecar;
+		if( !file_exists_for_patchcode(file_to_open) &&
+			string_ends_with_patchcode(patch_filename, ".undo.patch") &&
+			file_exists_for_patchcode(patch_filename) ){
+			// Also allow direct use of an undo patch file.
+			file_to_open = patch_filename;
+		}
+		cerr<<"Info: undo mode enabled; using undo patch file: "<<file_to_open<<endl;
+	}
+
 	fstream f;
-	f.open(patch_filename.c_str(), ios::in | ios::binary );
+	f.open(file_to_open.c_str(), ios::in | ios::binary );
 	
 	if( !f.is_open() ){
-		cerr<<"Error: Unable to open patch file : "<<patch_filename<<endl;
+		cerr<<"Error: Unable to open patch file : "<<file_to_open<<endl;
+		if( undo_mode )
+			cerr<<"Error: Undo patch was not found. Apply the original patch first so patchcode can create "<<undo_sidecar<<endl;
 		return 2;
 	}
 
@@ -152,8 +192,9 @@ int main( int argc , char *argv[ ] ){
 		return 3;
 	}
 
+	patchcode_apply_summary summary;
 	try{
-		t.apply_patches();
+		summary = t.apply_patches( undo_sidecar, create_undo_patch );
 	} catch ( const exception &e ){
 		cerr<<"Error: exception while applying patches: "<<e.what()<<endl;
 		return 4;
@@ -162,15 +203,39 @@ int main( int argc , char *argv[ ] ){
 		return 4;
 	}
 
-	fstream touchfile;
-	string touch = patch_filename ;
-	touch += "_" + patchcode_file::get_timestamp() + "_applied";
-	touchfile.open(touch.c_str(), ios::out | ios::trunc );
-	touchfile.close();
+	if( summary.applied > 0 ){
+		fstream touchfile;
+		string touch = patch_filename ;
+		touch += "_" + patchcode_file::get_timestamp();
+		touch += undo_mode ? "_undo_applied" : "_applied";
+		touchfile.open(touch.c_str(), ios::out | ios::trunc );
+		touchfile.close();
+	}
 
 	if( backup_enabled )
-		cerr<<"Info: backup files were created in the same folder before patching"<<endl;
+		cerr<<"Info: backup files were created in the same folder before patching when target files existed"<<endl;
 
+	if( summary.failed > 0 ){
+		if( summary.applied > 0 )
+			cerr<<"Status: patch partially applied with failures"<<endl;
+		else
+			cerr<<"Status: patch not applied"<<endl;
+		return 5;
+	}
+	if( summary.applied > 0 ){
+		cerr<<(undo_mode ? "Status: undo patch applied" : "Status: patch applied")<<endl;
+		return 0;
+	}
+	if( summary.already_applied > 0 && summary.disabled == 0 ){
+		cerr<<(undo_mode ? "Status: undo patch already applied" : "Status: patch already applied")<<endl;
+		return 0;
+	}
+	if( summary.disabled > 0 && summary.applied == 0 ){
+		cerr<<"Status: patch not applied; all enabled changes were skipped or disabled"<<endl;
+		return 0;
+	}
+
+	cerr<<"Status: no patch changes applied"<<endl;
 	return 0;
 }
 	

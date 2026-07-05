@@ -230,18 +230,117 @@ void patchcode_file::prepend_code( patch_lines *code ){
 	insert_code( 0, code );
 }
 		
-int patchcode_file::apply_patch( patchcode_segments *segment ){
+
+patch_lines patchcode_file::copy_code_range( int start, int end ){
+	patch_lines result;
+	if( start < 0 )
+		start = 0;
+	if( end < 0 )
+		end = 0;
+	if( start > static_cast<int>(source.size()) )
+		start = static_cast<int>(source.size());
+	if( end > static_cast<int>(source.size()) )
+		end = static_cast<int>(source.size());
+	if( end <= start )
+		return result;
+
+	for( int i = start; i < end; ++i )
+		result.push_back( source[static_cast<size_t>(i)]->line );
+	return result;
+}
+
+bool patchcode_file::range_equals_code( int start, int end, patch_lines *code ){
+	if( code == 0 )
+		return false;
+	if( start < 0 )
+		start = 0;
+	if( end < 0 )
+		end = 0;
+	if( start > static_cast<int>(source.size()) )
+		start = static_cast<int>(source.size());
+	if( end > static_cast<int>(source.size()) )
+		end = static_cast<int>(source.size());
+	if( end < start )
+		return false;
+	if( static_cast<size_t>(end - start) != code->size() )
+		return false;
+	for( int i = start; i < end; ++i ){
+		if( source[static_cast<size_t>(i)]->line != (*code)[static_cast<size_t>(i - start)] )
+			return false;
+	}
+	return true;
+}
+
+bool patchcode_file::tail_equals_code( patch_lines *code ){
+	if( code == 0 )
+		return false;
+	if( code->size() > source.size() )
+		return false;
+	const size_t offset = source.size() - code->size();
+	for( size_t i = 0; i < code->size(); ++i ){
+		if( source[offset + i]->line != (*code)[i] )
+			return false;
+	}
+	return true;
+}
+
+void patchcode_file::prepare_undo_segment( patchcode_segments *original_segment,
+						 patchcode_segments *undo_segment,
+						 patch_lines &undo_start,
+						 patch_lines &undo_change,
+						 patch_lines &undo_end ){
+	if( original_segment == 0 || undo_segment == 0 )
+		return;
+
+	undo_segment->filename = original_segment->filename;
+	undo_segment->author = string("patchcode undo generator");
+	undo_segment->patchname = string("Undo: ") + original_segment->patchname;
+	undo_segment->timestamp = patchcode_file::get_timestamp();
+	undo_segment->bugs = original_segment->bugs.empty() ? string("undo") : original_segment->bugs;
+	undo_segment->extra = string("Automatically generated undo patch for: ") + original_segment->patchname;
+	undo_segment->enable = true;
+	undo_segment->start = undo_start;
+	undo_segment->change = undo_change;
+	undo_segment->end = undo_end;
+}
+
+int patchcode_file::apply_patch( patchcode_segments *segment, patchcode_segments *undo_segment ){
 	if( segment == 0 )
 		return 100;
 	patch_lines *start  = &segment->start;
 	patch_lines *end    = &segment->end;
 	patch_lines *change = &segment->change;
 
+	patch_lines undo_start = *start;
+	patch_lines undo_end = *end;
+	patch_lines undo_change;
+
 	if( start->size() == 0 && end->size () == 0 ){
-		// append the code without replacing code
+		// Append-only patch. Treat a matching file tail as already applied.
+		if( tail_equals_code( change ) )
+			return 10;
+		if( undo_segment ){
+			if( source.empty() ){
+				undo_start.clear();
+				undo_end.clear();
+				undo_end.push_back("----++++endoffile++++----\n");
+				undo_change.clear();
+			} else {
+				// Use the complete original file as the start anchor so undo removes only the appended payload.
+				undo_start = copy_code_range( 0, static_cast<int>(source.size()) );
+				undo_end.clear();
+				undo_change.clear();
+			}
+			prepare_undo_segment( segment, undo_segment, undo_start, undo_change, undo_end );
+		}
 		append_code( change );
 	} else if( start->size() == 0 && end->size() == 1   ){
 		if ( (*end)[0].find("----++++endoffile++++----") != string::npos ){
+			if( range_equals_code( 0, static_cast<int>(source.size()), change ) )
+				return 10;
+			undo_change = copy_code_range( 0, static_cast<int>(source.size()) );
+			if( undo_segment )
+				prepare_undo_segment( segment, undo_segment, undo_start, undo_change, undo_end );
 			clear_code();
 			append_code( change );
 		} else {
@@ -249,24 +348,34 @@ int patchcode_file::apply_patch( patchcode_segments *segment ){
 			return 5;
 		}
 	} else if( start->size() == 0 && end->size() > 0 ){
-		// prepend the code after removing any content before the end marker
+		// Prepend/replace the content before the end marker.
 		int startline = 0;
 		int endline = find_pattern( end );
 		if( endline < 0 )
 			return 1;
 		endline -= static_cast<int>(end->size());
+		if( range_equals_code( startline, endline, change ) )
+			return 10;
+		undo_change = copy_code_range( startline, endline );
+		if( undo_segment )
+			prepare_undo_segment( segment, undo_segment, undo_start, undo_change, undo_end );
 		delete_code ( startline, endline );
 		prepend_code( change );
 	} else if( start->size() > 0 && end->size() == 0 ){
-		// append the code after replacing everything after the start marker
+		// Replace everything after the start marker.
 		int startline = find_pattern( start );
 		if( startline < 0 )
 			return 2;
 		int endline   = static_cast<int>(source.size());
+		if( range_equals_code( startline, endline, change ) )
+			return 10;
+		undo_change = copy_code_range( startline, endline );
+		if( undo_segment )
+			prepare_undo_segment( segment, undo_segment, undo_start, undo_change, undo_end );
 		delete_code ( startline, endline );
 		append_code( change );
 	} else {
-		// replace the code between the start marker and end marker
+		// Replace the code between the start marker and end marker.
 		int startline = find_pattern( start );
 		if( startline < 0 )
 			return 3;
@@ -276,6 +385,11 @@ int patchcode_file::apply_patch( patchcode_segments *segment ){
 		endline -= static_cast<int>(end->size());
 		if( endline < startline )
 			return 6;
+		if( range_equals_code( startline, endline, change ) )
+			return 10;
+		undo_change = copy_code_range( startline, endline );
+		if( undo_segment )
+			prepare_undo_segment( segment, undo_segment, undo_start, undo_change, undo_end );
 		delete_code ( startline, endline );
 		insert_code ( startline, change );
 	}

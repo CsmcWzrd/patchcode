@@ -88,3 +88,14 @@ VS2022 compile fix
 ----------------------------------
 - patchcode no longer creates backup files by default.
 - Added patchcode --backup to create timestamped backups for target files when requested.
+
+2026-07-05 quiet diffcode, binary option, and undo update
+----------------------------------------------------------
+- diffcode is quiet by default: identical inputs produce no output and no patch file.
+- diffcode prints only concise difference/patch-created messages when text files differ.
+- diffcode skips binary files silently by default.
+- Added diffcode --check-binary to compare binary files and report binary differences without generating binary patch segments.
+- patchcode now creates <patchfile>.undo.patch when a patch changes files.
+- Added patchcode --undo-patch <patchfile> to apply the generated reverse patch.
+- patchcode now reports per-segment and final status: applied, already applied, disabled, failed, or partially applied.
+- Added tests for quiet diffcode behavior, binary skipping/checking, undo patch application, and already-applied detection.

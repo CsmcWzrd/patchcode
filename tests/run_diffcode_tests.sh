@@ -180,3 +180,79 @@ echo "PASS directory_mode"
 "$DIFFCODE" "$DIRCASE/orig" "$DIRCASE/new" "$DIRCASE/default-dircase.patch" >/dev/null
 grep "^filename:$DIRCASE/orig/main.txt$" "$DIRCASE/default-dircase.patch" >/dev/null
 echo "PASS directory_mode_default_target_root"
+
+# diffcode should be quiet and should not create an output patch when inputs are identical.
+QUIETCASE="$WORK_DIR/quietcase"
+mkdir -p "$QUIETCASE"
+printf 'same\ntext\n' > "$QUIETCASE/a.txt"
+printf 'same\ntext\n' > "$QUIETCASE/b.txt"
+"$DIFFCODE" "$QUIETCASE/a.txt" "$QUIETCASE/b.txt" "$QUIETCASE/nochange.patch" >"$QUIETCASE/out.txt" 2>"$QUIETCASE/err.txt"
+[ ! -s "$QUIETCASE/out.txt" ]
+[ ! -s "$QUIETCASE/err.txt" ]
+[ ! -e "$QUIETCASE/nochange.patch" ]
+echo "PASS quiet_identical_no_patch"
+
+# Binary files are skipped by default and therefore do not create patchcode patches.
+BINCASE="$WORK_DIR/bincase"
+mkdir -p "$BINCASE"
+printf 'abc\000def\n' > "$BINCASE/bin_original.dat"
+printf 'abc\000XYZ\n' > "$BINCASE/bin_updated.dat"
+"$DIFFCODE" "$BINCASE/bin_original.dat" "$BINCASE/bin_updated.dat" "$BINCASE/bin.patch" >"$BINCASE/default.out" 2>"$BINCASE/default.err"
+[ ! -s "$BINCASE/default.out" ]
+[ ! -s "$BINCASE/default.err" ]
+[ ! -e "$BINCASE/bin.patch" ]
+echo "PASS binary_skipped_by_default"
+
+# --check-binary reports binary differences, but still does not create a text patch for them.
+"$DIFFCODE" --check-binary "$BINCASE/bin_original.dat" "$BINCASE/bin_updated.dat" "$BINCASE/bin.patch" >"$BINCASE/check.out" 2>"$BINCASE/check.err"
+grep 'binary files differ' "$BINCASE/check.out" >/dev/null
+[ ! -e "$BINCASE/bin.patch" ]
+echo "PASS check_binary_reports_difference"
+
+# Directory mode also skips binary files by default and checks them only with --check-binary.
+BINDIR="$WORK_DIR/bindir"
+mkdir -p "$BINDIR/orig" "$BINDIR/new"
+printf 'same\n' > "$BINDIR/orig/text.txt"
+printf 'same\n' > "$BINDIR/new/text.txt"
+printf 'one\000two' > "$BINDIR/orig/data.bin"
+printf 'one\000THREE' > "$BINDIR/new/data.bin"
+"$DIFFCODE" "$BINDIR/orig" "$BINDIR/new" "$BINDIR/default.patch" >"$BINDIR/default.out" 2>"$BINDIR/default.err"
+[ ! -s "$BINDIR/default.out" ]
+[ ! -s "$BINDIR/default.err" ]
+[ ! -e "$BINDIR/default.patch" ]
+"$DIFFCODE" --check-binary "$BINDIR/orig" "$BINDIR/new" "$BINDIR/check.patch" >"$BINDIR/check.out" 2>"$BINDIR/check.err"
+grep 'binary file differs: data.bin' "$BINDIR/check.out" >/dev/null
+grep '1 binary file differs' "$BINDIR/check.out" >/dev/null
+[ ! -e "$BINDIR/check.patch" ]
+echo "PASS directory_binary_check_option"
+
+# patchcode should generate an undo patch and --undo-patch should restore the original file.
+UNDOCASE="$WORK_DIR/undocase"
+mkdir -p "$UNDOCASE"
+printf 'one\ntwo\nthree\nfour\nfive\n' > "$UNDOCASE/original.txt"
+printf 'one\nTWO changed\nthree\ninserted\nfour\nfive\n' > "$UNDOCASE/updated.txt"
+cp "$UNDOCASE/original.txt" "$UNDOCASE/work.txt"
+"$DIFFCODE" --filename "$UNDOCASE/work.txt" \
+    --author Tester --patchname undo_case --bugs BUG \
+    "$UNDOCASE/original.txt" "$UNDOCASE/updated.txt" \
+    "$UNDOCASE/change.patch" >/dev/null
+"$PATCHCODE" "$UNDOCASE/change.patch" >"$UNDOCASE/apply.out" 2>"$UNDOCASE/apply.err"
+cmp "$UNDOCASE/work.txt" "$UNDOCASE/updated.txt" >/dev/null
+[ -s "$UNDOCASE/change.patch.undo.patch" ]
+grep 'Status: patch applied' "$UNDOCASE/apply.err" >/dev/null
+"$PATCHCODE" --undo-patch "$UNDOCASE/change.patch" >"$UNDOCASE/undo.out" 2>"$UNDOCASE/undo.err"
+cmp "$UNDOCASE/work.txt" "$UNDOCASE/original.txt" >/dev/null
+grep 'Status: undo patch applied' "$UNDOCASE/undo.err" >/dev/null
+echo "PASS undo_patch_option"
+
+# Reapplying an already applied patch should be reported without rewriting the file.
+cp "$UNDOCASE/original.txt" "$UNDOCASE/work_already.txt"
+"$DIFFCODE" --filename "$UNDOCASE/work_already.txt" \
+    --author Tester --patchname already_case --bugs BUG \
+    "$UNDOCASE/original.txt" "$UNDOCASE/updated.txt" \
+    "$UNDOCASE/already.patch" >/dev/null
+"$PATCHCODE" "$UNDOCASE/already.patch" >/dev/null 2>/dev/null
+"$PATCHCODE" "$UNDOCASE/already.patch" >"$UNDOCASE/already.out" 2>"$UNDOCASE/already.err"
+cmp "$UNDOCASE/work_already.txt" "$UNDOCASE/updated.txt" >/dev/null
+grep 'Status: patch already applied' "$UNDOCASE/already.err" >/dev/null
+echo "PASS already_applied_status"

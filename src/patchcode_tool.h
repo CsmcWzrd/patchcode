@@ -16,6 +16,15 @@ using namespace std;
 typedef vector<patchcode_segments*> vector_patchcode_segments;
 typedef map<string,patchcode_file*> map_patchcode_files;
 
+struct patchcode_apply_summary {
+	int total;
+	int applied;
+	int already_applied;
+	int disabled;
+	int failed;
+	patchcode_apply_summary();
+};
+
 enum SEGMENTS {
 	SEG_INFO = 0,
 	SEG_START,
@@ -30,7 +39,7 @@ class patchcode_tool {
 		~patchcode_tool ();
 
 		void read_patches ( );
-		void apply_patches ( );
+		patchcode_apply_summary apply_patches ( const string &undo_patch_filename = string(), bool create_undo_patch = false );
 		void print();
 
 	private:
@@ -42,6 +51,7 @@ class patchcode_tool {
 		fstream *patch_file;
 		bool backup_enabled;
 
+		bool write_undo_patch_file( const string &undo_patch_filename, vector_patchcode_segments &undo_segments );
 		void process_info(string &s );
 		void process_start ();
 		void process_patch();

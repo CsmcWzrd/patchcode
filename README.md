@@ -143,6 +143,15 @@ The project files use the Visual Studio 2022 `v143` platform toolset.
 patchcode path/to/file.patch
 ```
 
+`patchcode` reports the result of every patch segment as one of:
+
+- applied
+- already applied
+- disabled
+- failed
+
+It also prints a final summary and final status line. Reapplying the same patch is detected for normal replacement/truncate/append cases when the target replacement area already equals the patch change section.
+
 By default, `patchcode` does not create backup files. To create one timestamped backup for each target file modified during the run, pass `--backup`:
 
 ```sh
@@ -154,6 +163,28 @@ The option may also be placed after the patch filename:
 ```sh
 patchcode path/to/file.patch --backup
 ```
+
+## Undo a patch
+
+When a patch changes files, `patchcode` creates an undo patch next to the original patch file:
+
+```text
+path/to/file.patch.undo.patch
+```
+
+Undo the last successful application of that patch with:
+
+```sh
+patchcode --undo-patch path/to/file.patch
+```
+
+You may also apply the generated undo patch directly:
+
+```sh
+patchcode --undo-patch path/to/file.patch.undo.patch
+```
+
+The undo patch records the original removed/replaced text at apply time. Because the original text is not always present in a patchcode patch file, undo information is generated during patch application rather than reconstructed later from the original patch file alone.
 
 ## Generate a patch with diffcode
 
@@ -210,7 +241,15 @@ Directory-mode behavior:
 - Files present in both directories are compared line-by-line and emitted as normal patchcode replacement hunks.
 - Files present only in the updated directory are emitted as full-file creation segments. `patchcode` creates missing parent directories before writing the target file.
 - Files present only in the original directory are emitted as empty full-file replacement segments for review. This keeps the generated patch inside the current patchcode patch design; patchcode does not physically delete files.
-- Files containing NUL bytes, and files containing a line exactly equal to `<@+@+@>`, are skipped with a warning because they cannot be represented safely in the current text patch format.
+- Binary files are skipped silently by default.
+- Files containing a line exactly equal to `<@+@+@>` are skipped with a warning because they cannot be represented safely in the current text patch format.
+
+`diffcode` is intentionally quiet by default:
+
+- identical inputs produce no output and no patch file;
+- text differences print only a short message saying that the files/directories differ and that a patchcode patch was created;
+- binary files are skipped by default;
+- use `--check-binary` to compare binary files and report binary differences. Binary differences are reported only; no binary patchcode patch is generated.
 
 Useful `diffcode` options:
 
@@ -221,5 +260,6 @@ Useful `diffcode` options:
 - `--context <n>` sets the minimum number of anchor lines, default `3`.
 - `--max-context <n>` lets anchors expand to reduce duplicate pattern matches, default `8`.
 - `--disable` emits `enable:no` for review-only patches.
+- `--check-binary` compares binary files and reports binary differences without generating binary patch segments.
 
-`diffcode` is line based and intended for text files. It rejects files containing NUL bytes in single-file mode and skips them with warnings in directory mode.
+`diffcode` is line based and intended for text files. Binary files are skipped by default because the current patchcode patch format is text oriented.
