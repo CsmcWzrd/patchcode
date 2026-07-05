@@ -13,7 +13,7 @@ void show_help(){
 	cout<<endl;
 	cout<<"patchcode --help : show help"<<endl;
 	cout<<"patchcode -h : show help"<<endl;
-	cout<<"patchcode <filename> : run the patch program "<<endl;
+	cout<<"patchcode [--backup] <filename> : run the patch program "<<endl;
 	cout<<"diffcode <original-file> <updated-file> [output.patch] : generate a patchcode patch file"<<endl;
 	cout<<"diffcode <original-dir> <updated-dir> [output.patch] : generate a directory patchcode patch file"<<endl;
 	cout<<"----"<<endl;
@@ -53,7 +53,8 @@ void show_help(){
 	cout<<"              patch section.                                                                       "<<endl;
 	cout<<"              Use diffcode to generate patchcode patch files from original/updated files or dirs.  "<<endl;
 	cout<<endl;
-	cout<<"              Backup files are created for each file for each run of patchcode.                    "<<endl;
+	cout<<"              Backup files are not created by default. Use --backup to create one backup per     "<<endl;
+	cout<<"              target file for the current patchcode run.                                            "<<endl;
 	cout<<"              Applied empty file(*_applied) is created for each run for a specific patch file to   "<<endl;
 	cout<<"              detect multiple patchcode execution for the same patch file.                         "<<endl;
 	cout<<endl;
@@ -102,22 +103,44 @@ int main( int argc , char *argv[ ] ){
 		return 1;
 	}
 
-	string s = argv[1];
+	bool backup_enabled = false;
+	string patch_filename;
 
-	if( s == "--help" || s == "-h" ){
+	for( int i = 1; i < argc; ++i ){
+		string arg = argv[i];
+		if( arg == "--help" || arg == "-h" ){
+			show_help();
+			return 0;
+		} else if( arg == "--backup" ){
+			backup_enabled = true;
+		} else if( arg.size() > 0 && arg[0] == '-' ){
+			cerr<<"Error: Unknown option: "<<arg<<endl;
+			show_help();
+			return 1;
+		} else if( patch_filename.empty() ){
+			patch_filename = arg;
+		} else {
+			cerr<<"Error: Only one patch filename can be supplied"<<endl;
+			show_help();
+			return 1;
+		}
+	}
+
+	if( patch_filename.empty() ){
+		cerr<<"Error: Requires patch filename to be supplied "<<endl;
 		show_help();
-		return 0;
+		return 1;
 	}
 
 	fstream f;
-	f.open(argv[1], ios::in | ios::binary );
+	f.open(patch_filename.c_str(), ios::in | ios::binary );
 	
 	if( !f.is_open() ){
-		cerr<<"Error: Unable to open patch file : "<<argv[1]<<endl;
+		cerr<<"Error: Unable to open patch file : "<<patch_filename<<endl;
 		return 2;
 	}
 
-	patchcode_tool t ( &f );
+	patchcode_tool t ( &f, backup_enabled );
 
 	try{
 		t.read_patches();
@@ -140,12 +163,13 @@ int main( int argc , char *argv[ ] ){
 	}
 
 	fstream touchfile;
-	string touch = argv[1] ;
+	string touch = patch_filename ;
 	touch += "_" + patchcode_file::get_timestamp() + "_applied";
 	touchfile.open(touch.c_str(), ios::out | ios::trunc );
 	touchfile.close();
 
-	cerr<<"Info: bkp files have been created in the same folder before patch was done "<<endl;
+	if( backup_enabled )
+		cerr<<"Info: backup files were created in the same folder before patching"<<endl;
 
 	return 0;
 }

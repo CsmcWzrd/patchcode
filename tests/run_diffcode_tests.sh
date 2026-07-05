@@ -120,6 +120,38 @@ five
 
 echo "All diffcode generation tests passed."
 
+# Backup behavior: patchcode should not create backups unless --backup is supplied.
+BACKUPCASE="$WORK_DIR/backupcase"
+mkdir -p "$BACKUPCASE"
+printf 'one\ntwo\nthree\n' > "$BACKUPCASE/original.txt"
+printf 'one\nTWO changed\nthree\n' > "$BACKUPCASE/updated.txt"
+cp "$BACKUPCASE/original.txt" "$BACKUPCASE/work_no_backup.txt"
+"$DIFFCODE" --filename "$BACKUPCASE/work_no_backup.txt" \
+    --author Tester --patchname no_backup --bugs BUG \
+    "$BACKUPCASE/original.txt" "$BACKUPCASE/updated.txt" \
+    "$BACKUPCASE/no_backup.patch" >/dev/null
+"$PATCHCODE" "$BACKUPCASE/no_backup.patch" >/dev/null
+cmp "$BACKUPCASE/work_no_backup.txt" "$BACKUPCASE/updated.txt" >/dev/null
+if find "$BACKUPCASE" -maxdepth 1 -name 'work_no_backup.txt_bkp_*' | grep . >/dev/null; then
+    echo "FAIL backup created without --backup" >&2
+    exit 1
+fi
+echo "PASS no_backup_by_default"
+
+cp "$BACKUPCASE/original.txt" "$BACKUPCASE/work_with_backup.txt"
+"$DIFFCODE" --filename "$BACKUPCASE/work_with_backup.txt" \
+    --author Tester --patchname with_backup --bugs BUG \
+    "$BACKUPCASE/original.txt" "$BACKUPCASE/updated.txt" \
+    "$BACKUPCASE/with_backup.patch" >/dev/null
+"$PATCHCODE" --backup "$BACKUPCASE/with_backup.patch" >/dev/null
+cmp "$BACKUPCASE/work_with_backup.txt" "$BACKUPCASE/updated.txt" >/dev/null
+if ! find "$BACKUPCASE" -maxdepth 1 -name 'work_with_backup.txt_bkp_*' | grep . >/dev/null; then
+    echo "FAIL backup not created with --backup" >&2
+    exit 1
+fi
+echo "PASS backup_option"
+
+
 # Directory compare mode: changed file, nested added file, and deleted file review segment.
 DIRCASE="$WORK_DIR/dircase"
 mkdir -p "$DIRCASE/orig/sub" "$DIRCASE/new/sub" "$DIRCASE/work/sub"

@@ -143,6 +143,18 @@ The project files use the Visual Studio 2022 `v143` platform toolset.
 patchcode path/to/file.patch
 ```
 
+By default, `patchcode` does not create backup files. To create one timestamped backup for each target file modified during the run, pass `--backup`:
+
+```sh
+patchcode --backup path/to/file.patch
+```
+
+The option may also be placed after the patch filename:
+
+```sh
+patchcode path/to/file.patch --backup
+```
+
 ## Generate a patch with diffcode
 
 ```sh

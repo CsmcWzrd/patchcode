@@ -26,7 +26,7 @@ enum SEGMENTS {
 class patchcode_tool {
 	public:
 
-		patchcode_tool( fstream *f );
+		patchcode_tool( fstream *f, bool backup_enabled = false );
 		~patchcode_tool ();
 
 		void read_patches ( );
@@ -40,6 +40,7 @@ class patchcode_tool {
 		map_patchcode_files patch_files;
 		patch_lines cur_patch_code;
 		fstream *patch_file;
+		bool backup_enabled;
 
 		void process_info(string &s );
 		void process_start ();

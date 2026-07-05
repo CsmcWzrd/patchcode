@@ -24,10 +24,11 @@ static bool is_separator_line(const string &line) {
 	return strip_eol(line) == PATCHCODE_SEPARATOR;
 }
 
-patchcode_tool::patchcode_tool( fstream *f ){
+patchcode_tool::patchcode_tool( fstream *f, bool enable_backup ){
 	patch_file = f;
 	cur_patch_segment = 0;
 	line_num = 1;
+	backup_enabled = enable_backup;
 }
 
 patchcode_tool::~patchcode_tool() {
@@ -197,7 +198,8 @@ void patchcode_tool::apply_patches() {
 		}
 
 		if( (*i)->enable ) {
-			file->create_backup();
+			if( backup_enabled )
+				file->create_backup();
 			file->read_file();
 			int patch_result = file->apply_patch( (*i) );
 			if ( patch_result == 0 ){

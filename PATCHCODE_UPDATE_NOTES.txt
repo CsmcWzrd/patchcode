@@ -83,3 +83,8 @@ VS2022 compile fix
 - Added NOMINMAX and WIN32_LEAN_AND_MEAN protection before including Windows.h in diffcode_main.cpp.
 - Undefines legacy Windows min/max macros after Windows.h so std::min and std::max compile correctly in Visual Studio 2022.
 - Added the same Windows macro protections to the VS2022 project files.
+
+2026-07-05 backup behavior update
+----------------------------------
+- patchcode no longer creates backup files by default.
+- Added patchcode --backup to create timestamped backups for target files when requested.
