@@ -1,68 +1,71 @@
 Patchcode update notes
 ======================
 
-Changes made in this package:
+Current package name: patchcode
+Main tools: patchcode, diffcode
+Current section separator: <@+@+@>
 
-1. Renamed the project to patchcode.
-   - Executable target: patchcode
-   - CMake project: patchcode
-   - Source/header files: patchcode_*.cpp / patchcode_*.h
-   - User-facing help text and README now use Patchcode/patchcode.
+Recent changes
+--------------
 
-2. Replaced the old patch section separator with '<@+@+@>'.
-   - Patch files now use a line containing exactly <@+@+@> between:
-     * start code location
-     * updated code
-     * end code location
-   - Ordinary at-sign characters in patch payload lines are no longer interpreted as separators.
+1. Added directory comparison mode to diffcode.
 
-3. Parser fixes.
-   - Replaced fragile character-by-character parsing with line-preserving parsing.
-   - Preserves CR/LF in patch payload lines.
-   - Handles EOF and incomplete segments more safely.
-   - Ignores metadata comments and blank lines cleanly.
+   Usage:
 
-4. Patch application fixes.
-   - Fixed out-of-range iterator and dereference bugs in code-location matching.
-   - Fixed insertion at end-of-file.
-   - Fixed deletion range clamping.
-   - Initialized code-line state consistently.
-   - Avoids rewriting files when a patch segment fails to apply.
-   - Handles missing source files more safely.
-   - Uses binary mode for source reads/writes/backups to preserve line endings.
+       diffcode dir1 dir2 outputpatchcodepatchfile.patch
 
-5. Build fixes.
-   - CMake now sets C++11 explicitly.
-   - Build verified with cmake and GNU C++ in this environment.
+   This recursively compares regular files under dir1 and dir2 and generates a
+   single patchcode patch file containing patch sections for each changed path.
 
-Verification performed:
+2. Directory-mode patch target behavior.
+
+   By default, generated filename headers target the original directory root:
+
+       filename:dir1/relative/path.txt
+
+   To generate patches for a different working copy or target root, use:
+
+       diffcode --target-root workdir dir1 dir2 changes.patch
+
+3. Directory-mode file categories.
+
+   - Files present in both directories are emitted as normal patch hunks.
+   - Files present only in the updated directory are emitted as full-file
+     creation segments.
+   - Files present only in the original directory are emitted as empty full-file
+     replacement segments for review. The current patchcode format does not
+     physically delete files.
+
+4. Added missing-parent-directory creation to patchcode rewrite handling.
+
+   This allows patches generated for added files in new subdirectories to be
+   applied without manually creating all parent folders first.
+
+5. Added safety checks in diffcode.
+
+   - Single-file mode rejects files containing NUL bytes.
+   - Directory mode skips files containing NUL bytes.
+   - diffcode skips files that contain a line exactly equal to <@+@+@>, because
+     that line cannot be represented safely inside the current separator-based
+     patch file format.
+
+6. Updated tests.
+
+   tests/run_diffcode_tests.sh now covers:
+
+   - middle-of-file changes
+   - beginning-of-file changes
+   - end-of-file changes
+   - full-file replacement
+   - insert-only hunks
+   - directory mode changed files
+   - directory mode added files in nested directories
+   - directory mode deleted-file review segments
+   - default directory target-root filename generation
+
+Verified build and test commands
+--------------------------------
 
     cmake -S . -B build
     cmake --build build -j2
-
-Diffcode generator update
-=========================
-
-Additional changes made in this package:
-
-1. Added a second command-line executable: diffcode.
-   - Usage: diffcode [options] <original-file> <updated-file> [output.patch]
-   - It compares two text files and emits a patchcode patch file.
-   - Generated patches use the current '<@+@+@>' separator.
-
-2. Generated patch metadata.
-   - diffcode writes filename, author, patchname, timestamp, enable, bugs, and extra headers.
-   - Defaults are intentionally fillable placeholders for author, patchname, and bugs.
-   - Options are available to set these fields during generation.
-
-3. Generated pattern matching.
-   - diffcode creates start and end code-location pattern sections around each changed hunk.
-   - The default minimum anchor size is 3 lines.
-   - Anchors expand up to 8 lines by default to reduce duplicate pattern matches.
-   - Small or whole-file changes fall back to the patchcode full-file replacement marker.
-
-4. Verification performed for this update:
-
-    cmake -S . -B build
-    cmake --build build -j2
-    diffcode-generated patch applied with patchcode and compared successfully against updated files.
+    tests/run_diffcode_tests.sh

@@ -119,3 +119,32 @@ five
 '
 
 echo "All diffcode generation tests passed."
+
+# Directory compare mode: changed file, nested added file, and deleted file review segment.
+DIRCASE="$WORK_DIR/dircase"
+mkdir -p "$DIRCASE/orig/sub" "$DIRCASE/new/sub" "$DIRCASE/work/sub"
+printf 'alpha\nbeta\ngamma\n' > "$DIRCASE/orig/main.txt"
+printf 'keep\n' > "$DIRCASE/orig/sub/keep.txt"
+printf 'remove me\n' > "$DIRCASE/orig/oldonly.txt"
+cp -R "$DIRCASE/orig/." "$DIRCASE/work/"
+printf 'alpha\nBETA changed\ngamma\ndelta\n' > "$DIRCASE/new/main.txt"
+printf 'keep\n' > "$DIRCASE/new/sub/keep.txt"
+mkdir -p "$DIRCASE/new/sub/newdir"
+printf 'created\nfile\n' > "$DIRCASE/new/sub/newdir/added.txt"
+
+"$DIFFCODE" --target-root "$DIRCASE/work" \
+    --author Tester --patchname dircase --bugs BUG \
+    "$DIRCASE/orig" "$DIRCASE/new" "$DIRCASE/dircase.patch" >/dev/null
+
+"$PATCHCODE" "$DIRCASE/dircase.patch" >/dev/null
+cmp "$DIRCASE/work/main.txt" "$DIRCASE/new/main.txt" >/dev/null
+cmp "$DIRCASE/work/sub/keep.txt" "$DIRCASE/new/sub/keep.txt" >/dev/null
+cmp "$DIRCASE/work/sub/newdir/added.txt" "$DIRCASE/new/sub/newdir/added.txt" >/dev/null
+[ -f "$DIRCASE/work/oldonly.txt" ]
+[ ! -s "$DIRCASE/work/oldonly.txt" ]
+echo "PASS directory_mode"
+
+# The default directory mode should write original-dir-relative target filenames.
+"$DIFFCODE" "$DIRCASE/orig" "$DIRCASE/new" "$DIRCASE/default-dircase.patch" >/dev/null
+grep "^filename:$DIRCASE/orig/main.txt$" "$DIRCASE/default-dircase.patch" >/dev/null
+echo "PASS directory_mode_default_target_root"

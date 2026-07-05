@@ -15,6 +15,7 @@ void show_help(){
 	cout<<"patchcode -h : show help"<<endl;
 	cout<<"patchcode <filename> : run the patch program "<<endl;
 	cout<<"diffcode <original-file> <updated-file> [output.patch] : generate a patchcode patch file"<<endl;
+	cout<<"diffcode <original-dir> <updated-dir> [output.patch] : generate a directory patchcode patch file"<<endl;
 	cout<<"----"<<endl;
 	cout<<endl;
 	cout<<endl;
@@ -50,7 +51,7 @@ void show_help(){
 	cout<<"              Patchcode supports overlay patching. If a section modifies a code block, you can     "<<endl;
 	cout<<"              update the same code block with a newer patch section instead of correcting the old   "<<endl;
 	cout<<"              patch section.                                                                       "<<endl;
-	cout<<"              Use diffcode to generate patchcode patch files from original and updated files.       "<<endl;
+	cout<<"              Use diffcode to generate patchcode patch files from original/updated files or dirs.  "<<endl;
 	cout<<endl;
 	cout<<"              Backup files are created for each file for each run of patchcode.                    "<<endl;
 	cout<<"              Applied empty file(*_applied) is created for each run for a specific patch file to   "<<endl;

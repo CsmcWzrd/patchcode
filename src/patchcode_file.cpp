@@ -1,7 +1,106 @@
 #include <patchcode_file.h>
 
+#if defined(_WIN32)
+#include <direct.h>
+#include <windows.h>
+#else
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#endif
+
 using std::chrono::system_clock;
 using namespace std;
+
+
+static bool pc_is_path_separator(char c) {
+	return c == '/' || c == '\\';
+}
+
+static string pc_parent_path(string path) {
+	for( size_t i = 0; i < path.size(); ++i ) {
+		if( path[i] == '\\' )
+			path[i] = '/';
+	}
+	while( path.size() > 1 && pc_is_path_separator(path[path.size() - 1]) )
+		path.erase(path.size() - 1);
+	size_t pos = path.find_last_of('/');
+	if( pos == string::npos )
+		return string();
+	if( pos == 0 )
+		return string("/");
+	return path.substr(0, pos);
+}
+
+static bool pc_directory_exists(const string &path) {
+	if( path.empty() )
+		return true;
+#if defined(_WIN32)
+	DWORD attrs = GetFileAttributesA(path.c_str());
+	return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+#else
+	struct stat st;
+	return stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
+#endif
+}
+
+static bool pc_make_directory(const string &path) {
+	if( path.empty() || pc_directory_exists(path) )
+		return true;
+#if defined(_WIN32)
+	return _mkdir(path.c_str()) == 0 || pc_directory_exists(path);
+#else
+	return mkdir(path.c_str(), 0777) == 0 || errno == EEXIST || pc_directory_exists(path);
+#endif
+}
+
+static bool pc_ensure_directory_tree(const string &dir) {
+	if( dir.empty() || pc_directory_exists(dir) )
+		return true;
+
+	string normalized = dir;
+	for( size_t i = 0; i < normalized.size(); ++i ) {
+		if( normalized[i] == '\\' )
+			normalized[i] = '/';
+	}
+
+	string current;
+	size_t pos = 0;
+	if( !normalized.empty() && normalized[0] == '/' ) {
+		current = "/";
+		pos = 1;
+	} else if( normalized.size() >= 2 && normalized[1] == ':' ) {
+		current = normalized.substr(0, 2);
+		pos = 2;
+		if( pos < normalized.size() && normalized[pos] == '/' ) {
+			current += "/";
+			pos++;
+		}
+	}
+
+	while( pos <= normalized.size() ) {
+		size_t next = normalized.find('/', pos);
+		string part = normalized.substr(pos, next == string::npos ? string::npos : next - pos);
+		if( !part.empty() ) {
+			if( !current.empty() && !pc_is_path_separator(current[current.size() - 1]) )
+				current += "/";
+			current += part;
+			if( !pc_make_directory(current) )
+				return false;
+		}
+		if( next == string::npos )
+			break;
+		pos = next + 1;
+	}
+	return true;
+}
+
+static bool pc_ensure_parent_directory(const string &filename) {
+	string parent = pc_parent_path(filename);
+	if( parent.empty() )
+		return true;
+	return pc_ensure_directory_tree(parent);
+}
 
 static bool read_physical_line(istream &in, string &line) {
 	line.clear();
@@ -271,6 +370,11 @@ void patchcode_file::create_backup(){
 }
 
 void patchcode_file::rewrite_file(){
+	if( !pc_ensure_parent_directory(filename) ){
+		cerr<<"Error: Unable to create parent directory for file to patch: "<<filename<<endl;
+		return;
+	}
+
 	fstream sourcefile;
 	sourcefile.open(filename.c_str(), ios::out | ios::trunc | ios::binary );
 

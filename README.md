@@ -5,7 +5,7 @@ Patchcode is a simple editable text-file patching mechanism.
 The package now builds two command-line tools:
 
 - `patchcode` applies patchcode patch files.
-- `diffcode` generates patchcode patch files by comparing an original text file with an updated text file.
+- `diffcode` generates patchcode patch files by comparing an original text file with an updated text file, or by comparing two directories.
 
 Patch files contain metadata followed by three code-location sections:
 
@@ -47,9 +47,10 @@ patchcode path/to/file.patch
 
 ```sh
 diffcode [options] <original-file> <updated-file> [output.patch]
+diffcode [options] <original-dir>  <updated-dir>  [output.patch]
 ```
 
-Example:
+Single-file example:
 
 ```sh
 diffcode --filename src/example.cpp \
@@ -58,6 +59,20 @@ diffcode --filename src/example.cpp \
          --bugs "<fill-bug-ids>" \
          original/example.cpp updated/example.cpp example.patch
 ```
+
+Directory example:
+
+```sh
+diffcode dir1 dir2 outputpatchcodepatchfile.patch
+```
+
+In directory mode, `diffcode` recursively compares regular files below `dir1` and `dir2`. The generated `filename:` values target `dir1/<relative-path>` by default, so applying the patch from the same working directory transforms the original directory tree toward the updated directory tree:
+
+```sh
+patchcode outputpatchcodepatchfile.patch
+```
+
+Use `--target-root <dir>` to write a different target root into the generated `filename:` headers.
 
 `diffcode` emits normal patchcode segments. Each segment contains fillable metadata headers and generated pattern anchors:
 
@@ -78,13 +93,22 @@ end pattern lines
 <@+@+@>
 ```
 
+
+Directory-mode behavior:
+
+- Files present in both directories are compared line-by-line and emitted as normal patchcode replacement hunks.
+- Files present only in the updated directory are emitted as full-file creation segments. `patchcode` now creates missing parent directories before writing the target file.
+- Files present only in the original directory are emitted as empty full-file replacement segments for review. This keeps the generated patch inside the current patchcode patch design; patchcode does not physically delete files.
+- Files containing NUL bytes, and files containing a line exactly equal to `<@+@+@>`, are skipped with a warning because they cannot be represented safely in the current text patch format.
+
 Useful `diffcode` options:
 
 - `-o <file>` writes the patch output to a file.
-- `--filename <path>` controls the `filename:` metadata that `patchcode` will modify.
+- `--filename <path>` controls the `filename:` metadata that `patchcode` will modify in single-file mode.
+- `--target-root <dir>` controls the generated `filename:` root in directory mode.
 - `--author`, `--patchname`, `--bugs`, and `--extra` set the fillable headers.
 - `--context <n>` sets the minimum number of anchor lines, default `3`.
 - `--max-context <n>` lets anchors expand to reduce duplicate pattern matches, default `8`.
 - `--disable` emits `enable:no` for review-only patches.
 
-`diffcode` is line based and intended for text files. It rejects files containing NUL bytes.
+`diffcode` is line based and intended for text files. It rejects files containing NUL bytes in single-file mode and skips them with warnings in directory mode.
