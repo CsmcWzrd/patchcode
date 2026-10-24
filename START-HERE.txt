@@ -1,0 +1,40 @@
+PatchCode-GuiClient-Windows — build correction, 25 October 2026
+
+Open ONLY the root file:
+    PatchCode-GuiClient-Windows.sln
+
+The earlier package also included a native-only patchcode.sln under third_party.
+That solution contained only the C++ tools. It has been removed as an entry
+point; its original text is retained in docs/upstream-native-solution.txt.
+
+Visual Studio 2022 Community / Professional prerequisites:
+  - .NET desktop development
+  - .NET Framework 4.8 targeting pack
+  - Desktop development with C++ (MSVC v143 and Windows 10/11 SDK)
+
+Extract to a NEW folder; do not overlay the previous package, as that would
+leave its obsolete native-only solution in place.
+
+Build from any Command Prompt:
+    build.cmd
+or choose a configuration:
+    build.cmd Debug x64
+    build.cmd Release x86
+
+The script finds MSBuild from VS2022 automatically. A build is successful only
+when the C# GUI executable AND its two included native tools exist.
+
+Default application output:
+    bin\x64\Release\PatchCode-GuiClient-Windows.exe
+Native tools used by that application:
+    bin\x64\Release\tools\diffcode.exe
+    bin\x64\Release\tools\patchcode.exe
+Build diagnostics:
+    artifacts\build-Release-x64.binlog
+
+In Visual Studio, set PatchCode-GuiClient-Windows as Startup Project if needed.
+Configuration Manager should show Build checked for all three projects.
+The four supported configurations are Debug/Release with x64/x86.
+
+This correction leaves all C# application features and PatchCode diff syntax
+unchanged. See docs/BUILD-FIX.md and docs/VALIDATION.md for test evidence.

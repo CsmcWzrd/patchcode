@@ -1,0 +1,15 @@
+test_common_props_and_csharp_targets_are_imported (__main__.BuildConfigurationTests.test_common_props_and_csharp_targets_are_imported) ... ok
+test_explicit_project_configurations (__main__.BuildConfigurationTests.test_explicit_project_configurations) ... ok
+test_gui_is_registered_and_enabled_in_all_four_configurations (__main__.BuildConfigurationTests.test_gui_is_registered_and_enabled_in_all_four_configurations) ... ok
+test_intermediates_are_isolated (__main__.BuildConfigurationTests.test_intermediates_are_isolated) ... ok
+test_native_outputs_are_independent_of_solution_directory (__main__.BuildConfigurationTests.test_native_outputs_are_independent_of_solution_directory) ... ok
+test_native_project_references (__main__.BuildConfigurationTests.test_native_project_references) ... ok
+test_native_solution_mappings (__main__.BuildConfigurationTests.test_native_solution_mappings) ... ok
+test_native_staging_checks_missing_files (__main__.BuildConfigurationTests.test_native_staging_checks_missing_files) ... ok
+test_only_gui_solution_is_exposed (__main__.BuildConfigurationTests.test_only_gui_solution_is_exposed) ... ok
+test_sources_exist_and_framework_is_preserved (__main__.BuildConfigurationTests.test_sources_exist_and_framework_is_preserved) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.003s
+
+OK

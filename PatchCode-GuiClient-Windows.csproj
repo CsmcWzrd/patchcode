@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
+    <ProjectGuid>{AD716A36-81C8-4B22-95F6-38DB353C3001}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>PatchCodeGui</RootNamespace>
+    <AssemblyName>PatchCode-GuiClient-Windows</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <LangVersion>7.3</LangVersion>
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>x64;x86</Platforms>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <StartupObject>PatchCodeGui.Program</StartupObject>
+    <Prefer32Bit>false</Prefer32Bit>
+    <BuildNativeTools Condition="'$(BuildNativeTools)' == ''">true</BuildNativeTools>
+    <StageNativeTools Condition="'$(StageNativeTools)' == ''">$(BuildNativeTools)</StageNativeTools>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <NativePlatform>x64</NativePlatform>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <IntermediateOutputPath>obj\GuiClient\x64\Debug\</IntermediateOutputPath>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <NativePlatform>Win32</NativePlatform>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <IntermediateOutputPath>obj\GuiClient\x86\Debug\</IntermediateOutputPath>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <NativePlatform>x64</NativePlatform>
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <IntermediateOutputPath>obj\GuiClient\x64\Release\</IntermediateOutputPath>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <NativePlatform>Win32</NativePlatform>
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <IntermediateOutputPath>obj\GuiClient\x86\Release\</IntermediateOutputPath>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NativeToolsDirectory>$(MSBuildProjectDirectory)\bin\native\$(NativePlatform)\$(Configuration)\</NativeToolsDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Compile Include="src\Compare.cs" />
+    <Compile Include="src\DiffView.cs" />
+    <Compile Include="src\MainForm.cs" />
+    <Compile Include="src\NativeTool.cs" />
+    <Compile Include="src\Program.cs" />
+    <None Include="App.config" />
+    <None Include="app.manifest" />
+    <Content Include="templates\empty.patch"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+  </ItemGroup>
+  <ItemGroup Condition="'$(BuildNativeTools)' == 'true'">
+    <ProjectReference Include="third_party\patchcode\vs2022\patchcode.vcxproj">
+      <Project>{6B5A26A9-D7FA-4E93-A8F1-98BC5B64D110}</Project>
+      <Name>patchcode</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+      <Private>false</Private>
+      <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
+      <SetPlatform>Platform=$(NativePlatform)</SetPlatform>
+    </ProjectReference>
+    <ProjectReference Include="third_party\patchcode\vs2022\diffcode.vcxproj">
+      <Project>{93FA0A27-2230-41C0-9F63-35214E08B9F7}</Project>
+      <Name>diffcode</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+      <Private>false</Private>
+      <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
+      <SetPlatform>Platform=$(NativePlatform)</SetPlatform>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="ValidateGuiConfiguration" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(Platform)' != 'x64' And '$(Platform)' != 'x86'" Text="Select x64 or x86. This solution does not use Any CPU; x86 maps to Win32 for the native tools." />
+    <Error Condition="'$(Configuration)' != 'Debug' And '$(Configuration)' != 'Release'" Text="Select Debug or Release." />
+  </Target>
+  <Target Name="CopyNativeTools" AfterTargets="Build" Condition="'$(StageNativeTools)' == 'true'">
+    <ItemGroup>
+      <NativeTools Include="$(NativeToolsDirectory)diffcode.exe;$(NativeToolsDirectory)patchcode.exe" />
+    </ItemGroup>
+    <Error Condition="!Exists('%(NativeTools.Identity)')" Text="Native executable missing: %(NativeTools.Identity). Install the VS2022 Desktop development with C++ workload (v143 and Windows SDK), then rebuild the GUI solution." />
+    <Copy SourceFiles="@(NativeTools)" DestinationFolder="$(TargetDir)tools" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="third_party\patchcode\LICENSE" DestinationFolder="$(TargetDir)tools" SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="GUI application: $(TargetPath)" />
+  </Target>
+</Project>

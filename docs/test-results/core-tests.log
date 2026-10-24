@@ -1,0 +1,28 @@
+PASS old reconstruction
+PASS new reconstruction
+PASS old reconstruction
+PASS new reconstruction
+PASS old reconstruction
+PASS new reconstruction
+PASS old reconstruction
+PASS new reconstruction
+PASS old reconstruction
+PASS new reconstruction
+PASS old reconstruction
+PASS new reconstruction
+PASS old reconstruction
+PASS new reconstruction
+PASS replacement paired
+PASS trailing slash quoting
+PASS embedded quote
+PASS metadata edit preserves payload endings
+PASS add final newline
+PASS remove final newline
+PASS folder union
+PASS identical
+PASS added
+PASS removed
+PASS modified
+PASS binary detection
+PASS cancellation
+27 checks passed.

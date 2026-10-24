@@ -1,0 +1,4 @@
+PASS native format preserved
+PASS native target metadata
+PASS identical inputs produce no stale patch
+PASS binary report without patch

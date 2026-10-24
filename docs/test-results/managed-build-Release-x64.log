@@ -1,0 +1,9 @@
+
+>>>> xbuild tool is deprecated and will be removed in future updates, use msbuild instead <<<<
+
+XBuild Engine Version 14.0
+Mono, Version 6.8.0.105
+Copyright (C) 2005-2013 Various Mono authors
+	Configuration: Release Platform: x64
+/workspace/scratch/3535c9d2e2aa/runtime-min/root/usr/lib/mono/xbuild/14.0/bin/Microsoft.Common.targets:  warning : TargetFrameworkVersion 'v4.8' not supported by this toolset (ToolsVersion: 14.0).
+GUI application: /workspace/scratch/3535c9d2e2aa/work/PatchCode-GuiClient-Windows/bin/x64/Release//PatchCode-GuiClient-Windows.exe

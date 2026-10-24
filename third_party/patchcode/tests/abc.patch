@@ -1,0 +1,209 @@
+filename:a.txt
+author:Anoop
+patchname:patchname1
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11111
+extra:nothing here
+<@+@+@>
+line 1
+line 2
+line 3
+<@+@+@>
+line 4
+line 5
+line 6
+<@+@+@>
+line 7
+line 8
+line 9
+<@+@+@>
+
+filename:b.txt
+author:Anoop
+patchname:patchname2
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11112
+extra:nothing here
+<@+@+@>
+line 1
+line 2
+line 3
+<@+@+@>
+line 14
+line 15
+line 16
+<@+@+@>
+line 7
+line 8
+line 9
+<@+@+@>
+
+
+#comment 1
+#comment 2 
+#comment 3
+
+filename:a.txt
+author:Anoop
+patchname:patchname3
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11111,11113
+extra:nothing here
+<@+@+@>
+line 4
+line 5
+line 6
+<@+@+@>
+             line 4.1
+		line 5.1
+	#line 6.1
+#line 7.1
+   @comment
+<@+@+@>
+line 7
+line 8
+line 9
+<@+@+@>
+
+
+filename:a.txt
+author:Anoop
+patchname:patchname4
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11111,11113
+extra:nothing here
+<@+@+@>
+<@+@+@>
+	emptyline 1
+	emptyline 2
+	emptyline 3
+	emptyline 4
+<@+@+@>
+<@+@+@>
+
+
+filename:a.txt
+author:Anoop
+patchname:patchname5
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11111,11113
+extra:nothing here
+<@+@+@>
+<@+@+@>
+	eoline 1
+	eoline 2
+	eoline 3
+	eoline 4
+<@+@+@>
+line 3
+line 4
+line 5
+<@+@+@>
+
+
+filename:a.txt
+author:Anoop
+patchname:patchname6
+timestamp:2022/12/17-14:25:40 IST
+enable:no
+bugs:11111,11113
+extra:nothing here
+<@+@+@>
+line 7
+line 8
+line 9
+<@+@+@>
+	eoline 11
+	eoline 12
+	eoline 13
+	eoline 14
+<@+@+@>
+<@+@+@>
+
+filename:c.txt
+author:Anoop
+patchname:patchname7
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11111,11113
+extra:nothing here
+<@+@+@>
+<@+@+@>
+	eoline 11
+	eoline 12
+	eoline 13
+	eoline 14
+<@+@+@>
+----++++endoffile++++----
+<@+@+@>
+
+filename:b.txt
+author:Anoop
+patchname:patchname8
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11112
+extra:nothing here
+<@+@+@>
+line 15
+line 16
+line 7
+<@+@+@>
+line 7.11
+line 7.22
+line 7.33
+<@+@+@>
+line 10
+line 11
+line 12
+<@+@+@>
+
+
+filename:b.txt
+author:Anoop
+patchname:patchname9
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11112
+extra:nothing here
+<@+@+@>
+line 15
+line 16
+line 7
+<@+@+@>
+line 7.1
+line 7.2
+line 7.3
+<@+@+@>
+line 8
+line 9
+line 10
+<@+@+@>
+
+filename:src/test.cpp
+author:Anoop
+patchname:patchname10
+timestamp:2022/12/17-14:25:40 IST
+enable:yes
+bugs:11112
+extra:nothing here
+<@+@+@>
+			while( line_num < n ) {
+				if( (*i)->line != (*code)[line_num] )
+					break;
+<@+@+@>
+//line 7.1
+//line 7.2
+//line 7.3
+<@+@+@>
+				i++;
+				line_num++;
+				cur_line_num++;
+<@+@+@>
+
+

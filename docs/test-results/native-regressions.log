@@ -1,0 +1,92 @@
+
+Info: Applying patch : middle
+Status: applied patch middle to /tmp/patchcode_diffcode_tests_7/middle_work.txt
+----
+
+Info: undo patch file created: /tmp/patchcode_diffcode_tests_7/middle.patch.undo.patch
+Summary: 1 patch segment processed; 1 applied, 0 already applied, 0 disabled, 0 failed.
+Status: patch applied
+PASS middle
+
+Info: Applying patch : beginning
+Status: applied patch beginning to /tmp/patchcode_diffcode_tests_7/beginning_work.txt
+----
+
+Info: undo patch file created: /tmp/patchcode_diffcode_tests_7/beginning.patch.undo.patch
+Summary: 1 patch segment processed; 1 applied, 0 already applied, 0 disabled, 0 failed.
+Status: patch applied
+PASS beginning
+
+Info: Applying patch : end
+Status: applied patch end to /tmp/patchcode_diffcode_tests_7/end_work.txt
+----
+
+Info: undo patch file created: /tmp/patchcode_diffcode_tests_7/end.patch.undo.patch
+Summary: 1 patch segment processed; 1 applied, 0 already applied, 0 disabled, 0 failed.
+Status: patch applied
+PASS end
+
+Info: Applying patch : small_full
+Status: applied patch small_full to /tmp/patchcode_diffcode_tests_7/small_full_work.txt
+----
+
+Info: undo patch file created: /tmp/patchcode_diffcode_tests_7/small_full.patch.undo.patch
+Summary: 1 patch segment processed; 1 applied, 0 already applied, 0 disabled, 0 failed.
+Status: patch applied
+PASS small_full
+
+Info: Applying patch : insert_only
+Status: applied patch insert_only to /tmp/patchcode_diffcode_tests_7/insert_only_work.txt
+----
+
+Info: undo patch file created: /tmp/patchcode_diffcode_tests_7/insert_only.patch.undo.patch
+Summary: 1 patch segment processed; 1 applied, 0 already applied, 0 disabled, 0 failed.
+Status: patch applied
+PASS insert_only
+All diffcode generation tests passed.
+
+Info: Applying patch : no_backup
+Status: applied patch no_backup to /tmp/patchcode_diffcode_tests_7/backupcase/work_no_backup.txt
+----
+
+Info: undo patch file created: /tmp/patchcode_diffcode_tests_7/backupcase/no_backup.patch.undo.patch
+Summary: 1 patch segment processed; 1 applied, 0 already applied, 0 disabled, 0 failed.
+Status: patch applied
+PASS no_backup_by_default
+
+Info: Applying patch : with_backup
+Status: applied patch with_backup to /tmp/patchcode_diffcode_tests_7/backupcase/work_with_backup.txt
+----
+
+Info: undo patch file created: /tmp/patchcode_diffcode_tests_7/backupcase/with_backup.patch.undo.patch
+Summary: 1 patch segment processed; 1 applied, 0 already applied, 0 disabled, 0 failed.
+Info: backup files were created in the same folder before patching when target files existed
+Status: patch applied
+PASS backup_option
+
+Info: Applying patch : dircase main.txt
+Status: applied patch dircase main.txt to /tmp/patchcode_diffcode_tests_7/dircase/work/main.txt
+----
+
+
+Info: Applying patch : dircase oldonly.txt
+Status: applied patch dircase oldonly.txt to /tmp/patchcode_diffcode_tests_7/dircase/work/oldonly.txt
+----
+
+
+Info: Applying patch : dircase sub/newdir/added.txt
+Warning: Source file not found, creating a new file when patch is written: /tmp/patchcode_diffcode_tests_7/dircase/work/sub/newdir/added.txt
+Status: applied patch dircase sub/newdir/added.txt to /tmp/patchcode_diffcode_tests_7/dircase/work/sub/newdir/added.txt
+----
+
+Info: undo patch file created: /tmp/patchcode_diffcode_tests_7/dircase/dircase.patch.undo.patch
+Summary: 3 patch segments processed; 3 applied, 0 already applied, 0 disabled, 0 failed.
+Status: patch applied
+PASS directory_mode
+PASS directory_mode_default_target_root
+PASS quiet_identical_no_patch
+PASS binary_skipped_by_default
+PASS check_binary_reports_difference
+PASS directory_binary_check_option
+PASS undo_patch_option
+PASS already_applied_status

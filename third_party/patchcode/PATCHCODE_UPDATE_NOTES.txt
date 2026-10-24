@@ -1,0 +1,101 @@
+Patchcode update notes
+======================
+
+Current package name: patchcode
+Main tools: patchcode, diffcode
+Current section separator: <@+@+@>
+
+Recent changes
+--------------
+
+1. Added directory comparison mode to diffcode.
+
+   Usage:
+
+       diffcode dir1 dir2 outputpatchcodepatchfile.patch
+
+   This recursively compares regular files under dir1 and dir2 and generates a
+   single patchcode patch file containing patch sections for each changed path.
+
+2. Directory-mode patch target behavior.
+
+   By default, generated filename headers target the original directory root:
+
+       filename:dir1/relative/path.txt
+
+   To generate patches for a different working copy or target root, use:
+
+       diffcode --target-root workdir dir1 dir2 changes.patch
+
+3. Directory-mode file categories.
+
+   - Files present in both directories are emitted as normal patch hunks.
+   - Files present only in the updated directory are emitted as full-file
+     creation segments.
+   - Files present only in the original directory are emitted as empty full-file
+     replacement segments for review. The current patchcode format does not
+     physically delete files.
+
+4. Added missing-parent-directory creation to patchcode rewrite handling.
+
+   This allows patches generated for added files in new subdirectories to be
+   applied without manually creating all parent folders first.
+
+5. Added safety checks in diffcode.
+
+   - Single-file mode rejects files containing NUL bytes.
+   - Directory mode skips files containing NUL bytes.
+   - diffcode skips files that contain a line exactly equal to <@+@+@>, because
+     that line cannot be represented safely inside the current separator-based
+     patch file format.
+
+6. Updated tests.
+
+   tests/run_diffcode_tests.sh now covers:
+
+   - middle-of-file changes
+   - beginning-of-file changes
+   - end-of-file changes
+   - full-file replacement
+   - insert-only hunks
+   - directory mode changed files
+   - directory mode added files in nested directories
+   - directory mode deleted-file review segments
+   - default directory target-root filename generation
+
+Verified build and test commands
+--------------------------------
+
+    cmake -S . -B build
+    cmake --build build -j2
+    tests/run_diffcode_tests.sh
+
+2026-07-05 build-system update
+------------------------------
+- Added README Information section requested by project owner.
+- Added a plain POSIX-style Makefile that builds patchcode and diffcode.
+- Added Autoconf files: configure.ac, config.mk.in, and generated configure script.
+- Updated CMake project files with install targets and a smoke-test entry.
+- Added Visual Studio 2022 solution and C++ project files under vs2022/.
+
+VS2022 compile fix
+------------------
+- Added NOMINMAX and WIN32_LEAN_AND_MEAN protection before including Windows.h in diffcode_main.cpp.
+- Undefines legacy Windows min/max macros after Windows.h so std::min and std::max compile correctly in Visual Studio 2022.
+- Added the same Windows macro protections to the VS2022 project files.
+
+2026-07-05 backup behavior update
+----------------------------------
+- patchcode no longer creates backup files by default.
+- Added patchcode --backup to create timestamped backups for target files when requested.
+
+2026-07-05 quiet diffcode, binary option, and undo update
+----------------------------------------------------------
+- diffcode is quiet by default: identical inputs produce no output and no patch file.
+- diffcode prints only concise difference/patch-created messages when text files differ.
+- diffcode skips binary files silently by default.
+- Added diffcode --check-binary to compare binary files and report binary differences without generating binary patch segments.
+- patchcode now creates <patchfile>.undo.patch when a patch changes files.
+- Added patchcode --undo-patch <patchfile> to apply the generated reverse patch.
+- patchcode now reports per-segment and final status: applied, already applied, disabled, failed, or partially applied.
+- Added tests for quiet diffcode behavior, binary skipping/checking, undo patch application, and already-applied detection.

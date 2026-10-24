@@ -1,265 +1,46 @@
-# patchcode
+# PatchCode-GuiClient-Windows
 
-# Information:
+Visual C# Windows Forms two-way diff client for Visual Studio **2022 Community and Professional**. Targets .NET Framework 4.8. Includes the MIT-licensed PatchCode and DiffCode C++ sources pinned to upstream commit `8ed8e75785984420c708603aad8a6a8beef20282`.
 
-Designed by Anoop Kumar Narayanan
+## Build — corrected package, 25 October 2026
 
-Coded by ChatGPT 5.5 (Originally coded by Anoop Kumar Narayanan, only patch tool was present and the repo name was twopatch)
+**Extract this update to a new folder. Open the root `PatchCode-GuiClient-Windows.sln`.** The obsolete native-only `third_party/patchcode/vs2022/patchcode.sln` has been removed as a solution entry point; its original text is retained in `docs/upstream-native-solution.txt`. There is now one build solution containing the C# GUI and both native tools.
 
-Patchcode is a simple editable text-file patching mechanism.
 
-The package builds two command-line tools:
+1. In Visual Studio Installer, install **.NET desktop development**, the **.NET Framework 4.8 targeting pack**, and **Desktop development with C++**, including the **MSVC v143** toolset and Windows 10/11 SDK.
+2. Extract the entire ZIP into a writable directory.
+3. Open `PatchCode-GuiClient-Windows.sln` at the package root. Set `PatchCode-GuiClient-Windows` as the startup project if necessary.
+4. Choose **Release | x64** (or Debug / x86) and **Build → Build Solution**. No NuGet packages or external editor components are required.
+5. Run `bin/x64/Release/PatchCode-GuiClient-Windows.exe`, or press F5.
 
-- `patchcode` applies patchcode patch files.
-- `diffcode` generates patchcode patch files by comparing an original text file with an updated text file, or by comparing two directories.
+`build.cmd` builds Release x64 from any Command Prompt, locating Visual Studio 2022 MSBuild automatically. Use `build.cmd Debug x64` or `build.cmd Release x86` for other configurations. The script rebuilds the complete solution, saves a binary build log in `artifacts`, and fails unless the GUI executable and both copied native tools exist. The solution builds both native tools before the C# client and copies them into the GUI output's `tools` folder. The C# project now contains actual native project references, so building that project directly with MSBuild also builds its tools. The four explicit Debug/Release × x64/x86 C# configurations match the solution mappings, with x86 mapped to Win32 for C++. Deploy the entire output directory, including `tools` and its license. The .NET Framework 4.8 runtime must be installed on the destination Windows machine. Native projects use the static C++ runtime.
 
-Patch files contain metadata followed by three code-location sections:
+## Use
 
-1. start code location
-2. updated code
-3. end code location
+- **File → Compare two files / Compare two folders** selects the old and new inputs. Folder mode scans recursively, pairing paths case-insensitively as on Windows. Added, removed, modified, identical and binary files are distinguished. Empty directories have no diff entries.
+- The left pane contains **Folder 1 (old code)**, **Folder 2 (new code)** and **Diff** tree tabs. Selecting a file in a folder tree opens its read-only source. Selecting an entry in Diff opens a dedicated comparison tab. Repeated selection reuses the tab.
+- **View → Left right comparison** shows aligned old/new lines with a shared vertical scroll position and line numbers. Missing sides are blank. **Merged view** shows context plus deletions with a **Red** background and additions with a **Blue** background. This view is a two-way presentation, not a three-way merge or source editor.
+- F7 / Shift+F7 navigates changed blocks. Ctrl+W or the toolbar closes a tab. Ctrl+O selects files; Ctrl+Shift+O selects folders; F5 rescans, closing old previews after prompting for unsaved patches.
+- **File → Generate native patch** runs the included `diffcode.exe` on the current inputs. It does not use the GUI alignment algorithm to serialize a patch. Every native metadata field and all patch sections appear in one editable text tab. Multiple segments remain in the same document. Edit `filename`, `author`, `patchname`, `timestamp`, `enable`, `bugs`, and `extra` directly there. No metadata form is used.
+- **File → New empty patch template** supplies the seven keys with **no values**, plus all four separators. The same file is in `templates/empty.patch`. Fill required metadata before using the patch; the empty template is intentionally not executable metadata. Set `enable:yes` or `enable:no` explicitly.
+- Ctrl+S / Ctrl+Shift+S saves the active patch document. File → Open patch / metadata reopens an existing UTF-8 patch. Standard text selection, undo, cut/copy/paste and select-all are available. Source previews are read-only. Closing, choosing another comparison, refreshing and exiting prompt for unsaved patches.
+- **View → Tool log** shows native output, skipped files and warnings. Binary-only changes or identical inputs can produce no patch. Warnings are displayed in their own tab after export.
+- Cancel stops scanning/alignment or kills a running native export. Native export also has a two-minute timeout. Comparison and patch generation never apply changes to the input files. The included `patchcode.exe` is available for separate command-line use; this version has no GUI Apply action.
 
-Each section is separated by a line containing exactly:
+## Format and encoding
 
-```text
-<@+@+@>
-```
+The upstream `<@+@+@>` format and native source files are unchanged. Patch metadata is not converted to JSON, unified diff or another format. Unedited patch saves retain their loaded text; normal-sized text edits retain original line endings on aligned unchanged lines. Newly edited lines use LF. Large edits may use the documented coarse alignment and normalize changed spans. Files save as UTF-8 without adding a BOM; an existing U+FEFF character is retained. Use UTF-8 source content when exporting through the text editor; invalid UTF-8 native output is rejected rather than silently converted.
 
-The old single `@` separator is no longer used, so ordinary `@` characters can appear in patch code without being treated as section delimiters.
+Source previews decode strict UTF-8, falling back to the current Windows code page. UTF-16/NUL-containing files are reported as binary under the upstream convention. `[CRLF]`, `[LF]` and `[no newline]` annotations distinguish physical line endings in diff views; they are display labels and never written into patches. The GUI compares byte identity before rendering, so encoding-only changes can appear in the tree even when decoded previews look alike.
 
-## Build options
+The native Windows tools use ANSI APIs. The GUI permits Unicode paths for viewing, but **native export requires ASCII paths, all descendant filenames and TEMP** to avoid corrupting target metadata. Copy inputs to ASCII paths for export. Links/junctions are rejected before scanning/export. File previews and patch opening are limited to 8 MiB, with a 200,000 physical-line limit in comparison. GUI alignment bounds its LCS matrix to four million cells; larger changed regions are shown as a coarse replacement. Export uses upstream's own algorithm and limits. Native generation reads current files again; refresh after external changes.
 
-The repository now includes four build-system options:
+Upstream cannot represent a literal separator line, patch binaries, physically delete files, reliably preserve missing final newlines in generated payloads, or create/delete an empty file through a content-only change. Review the tool log. **Removed** in the tree describes the input trees; an exported removal empties the target file. Review anchors and target filenames before applying patches separately. See `docs/REVIEW.md`.
 
-1. Plain Makefile
-2. Autoconf-generated configuration with the same Makefile
-3. CMake project files
-4. Visual Studio 2022 C++ solution and project files
+## Validation
 
-### Build with plain Make
+`tests/run-tests.cmd` compiles and runs core comparison/quoting/metadata-preservation tests from a VS 2022 Developer Command Prompt. See `docs/BUILD-FIX.md` for the build changes and `docs/VALIDATION.md` for the checks actually performed and remaining Windows validation. The package contains source, not a prebuilt Windows release.
 
-```sh
-make
-```
+## Attribution
 
-This creates:
-
-```text
-build/make/patchcode
-build/make/diffcode
-```
-
-Useful Make targets:
-
-```sh
-make test
-make install PREFIX=/usr/local
-make clean
-```
-
-### Build with Autoconf
-
-The package includes `configure.ac`, `config.mk.in`, and a generated `configure` script.
-
-```sh
-./configure --prefix=/usr/local
-make
-make test
-make install
-```
-
-The Autoconf flow writes `config.mk`, which is included by the plain Makefile.
-
-If `configure` needs to be regenerated:
-
-```sh
-autoconf
-```
-
-### Build with CMake
-
-```sh
-cmake -S . -B build
-cmake --build build
-```
-
-This creates both executables under the build tree, normally:
-
-```text
-build/src/patchcode
-build/src/diffcode
-```
-
-On Windows generators, binaries may be under a configuration directory such as:
-
-```text
-build/src/Debug
-build/src/Release
-```
-
-Run tests with CMake:
-
-```sh
-ctest --test-dir build --output-on-failure
-```
-
-Install with CMake:
-
-```sh
-cmake --install build --prefix /usr/local
-```
-
-### Build with Visual Studio 2022
-
-Open:
-
-```text
-vs2022/patchcode.sln
-```
-
-The solution contains two console application projects:
-
-- `patchcode`
-- `diffcode`
-
-Use `Build > Build Solution` in Visual Studio 2022. The output binaries are written to:
-
-```text
-vs2022/bin/<Platform>/<Configuration>/
-```
-
-For example:
-
-```text
-vs2022/bin/x64/Release/patchcode.exe
-vs2022/bin/x64/Release/diffcode.exe
-```
-
-The project files use the Visual Studio 2022 `v143` platform toolset.
-
-## Apply a patch
-
-```sh
-patchcode path/to/file.patch
-```
-
-`patchcode` reports the result of every patch segment as one of:
-
-- applied
-- already applied
-- disabled
-- failed
-
-It also prints a final summary and final status line. Reapplying the same patch is detected for normal replacement/truncate/append cases when the target replacement area already equals the patch change section.
-
-By default, `patchcode` does not create backup files. To create one timestamped backup for each target file modified during the run, pass `--backup`:
-
-```sh
-patchcode --backup path/to/file.patch
-```
-
-The option may also be placed after the patch filename:
-
-```sh
-patchcode path/to/file.patch --backup
-```
-
-## Undo a patch
-
-When a patch changes files, `patchcode` creates an undo patch next to the original patch file:
-
-```text
-path/to/file.patch.undo.patch
-```
-
-Undo the last successful application of that patch with:
-
-```sh
-patchcode --undo-patch path/to/file.patch
-```
-
-You may also apply the generated undo patch directly:
-
-```sh
-patchcode --undo-patch path/to/file.patch.undo.patch
-```
-
-The undo patch records the original removed/replaced text at apply time. Because the original text is not always present in a patchcode patch file, undo information is generated during patch application rather than reconstructed later from the original patch file alone.
-
-## Generate a patch with diffcode
-
-```sh
-diffcode [options] <original-file> <updated-file> [output.patch]
-diffcode [options] <original-dir>  <updated-dir>  [output.patch]
-```
-
-Single-file example:
-
-```sh
-diffcode --filename src/example.cpp \
-         --author "<fill-author>" \
-         --patchname "<fill-patch-name>" \
-         --bugs "<fill-bug-ids>" \
-         original/example.cpp updated/example.cpp example.patch
-```
-
-Directory example:
-
-```sh
-diffcode dir1 dir2 outputpatchcodepatchfile.patch
-```
-
-In directory mode, `diffcode` recursively compares regular files below `dir1` and `dir2`. The generated `filename:` values target `dir1/<relative-path>` by default, so applying the patch from the same working directory transforms the original directory tree toward the updated directory tree:
-
-```sh
-patchcode outputpatchcodepatchfile.patch
-```
-
-Use `--target-root <dir>` to write a different target root into the generated `filename:` headers.
-
-`diffcode` emits normal patchcode segments. Each segment contains fillable metadata headers and generated pattern anchors:
-
-```text
-filename:src/example.cpp
-author:<fill-author>
-patchname:<fill-patch-name>
-timestamp:2026/07/05-10:00:00
-enable:yes
-bugs:<fill-bug-ids>
-extra:Generated by diffcode; review pattern anchors before applying.
-<@+@+@>
-start pattern lines
-<@+@+@>
-updated code lines
-<@+@+@>
-end pattern lines
-<@+@+@>
-```
-
-Directory-mode behavior:
-
-- Files present in both directories are compared line-by-line and emitted as normal patchcode replacement hunks.
-- Files present only in the updated directory are emitted as full-file creation segments. `patchcode` creates missing parent directories before writing the target file.
-- Files present only in the original directory are emitted as empty full-file replacement segments for review. This keeps the generated patch inside the current patchcode patch design; patchcode does not physically delete files.
-- Binary files are skipped silently by default.
-- Files containing a line exactly equal to `<@+@+@>` are skipped with a warning because they cannot be represented safely in the current text patch format.
-
-`diffcode` is intentionally quiet by default:
-
-- identical inputs produce no output and no patch file;
-- text differences print only a short message saying that the files/directories differ and that a patchcode patch was created;
-- binary files are skipped by default;
-- use `--check-binary` to compare binary files and report binary differences. Binary differences are reported only; no binary patchcode patch is generated.
-
-Useful `diffcode` options:
-
-- `-o <file>` writes the patch output to a file.
-- `--filename <path>` controls the `filename:` metadata that `patchcode` will modify in single-file mode.
-- `--target-root <dir>` controls the generated `filename:` root in directory mode.
-- `--author`, `--patchname`, `--bugs`, and `--extra` set the fillable headers.
-- `--context <n>` sets the minimum number of anchor lines, default `3`.
-- `--max-context <n>` lets anchors expand to reduce duplicate pattern matches, default `8`.
-- `--disable` emits `enable:no` for review-only patches.
-- `--check-binary` compares binary files and reports binary differences without generating binary patch segments.
-
-`diffcode` is line based and intended for text files. Binary files are skipped by default because the current patchcode patch format is text oriented.
+PatchCode upstream: https://github.com/CsmcWzrd/patchcode/ . Original notices are in `third_party/patchcode/LICENSE` and its README. `docs/UPSTREAM-MANIFEST.sha256` records unchanged upstream source hashes. Only the vendored Visual Studio project output/runtime settings and solution packaging were adjusted for integration; no patch syntax or native algorithm changed. GUI source is provided under the MIT license in the root `LICENSE`.
